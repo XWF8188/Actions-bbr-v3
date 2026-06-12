@@ -166,3 +166,41 @@ jobs:
             ./kernel/linux-*.deb
             ./build-configs/${{ matrix.arch }}-${{ env.KERNEL_VERSION }}.config
           body: "带有 BBRv3 的最新内核，适用于 ${{ matrix.arch }} 架构。Compiled & Optimized by Joey."
+
+  update-config-baseline:
+    needs: build
+    if: ${{ needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 下载本轮最终配置
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: config-*
+          path: ./generated-configs
+          merge-multiple: true
+
+      - name: 回写配置基线
+        run: |
+          set -euxo pipefail
+          if [ ! -f ./generated-configs/x86_64.config ] && [ ! -f ./generated-configs/arm64.config ]; then
+            echo "No generated configs found; nothing to update."
+            exit 0
+          fi
+
+          [ -f ./generated-configs/x86_64.config ] && cp ./generated-configs/x86_64.config ./x86-64.config
+          [ -f ./generated-configs/arm64.config ] && cp ./generated-configs/arm64.config ./arm64.config
+
+          if git diff --quiet -- x86-64.config arm64.config; then
+            echo "Generated configs match current baselines."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add x86-64.config arm64.config
+          git commit -m "Refresh generated kernel config baselines [skip ci]"
+          git push
