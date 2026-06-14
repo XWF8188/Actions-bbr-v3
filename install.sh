@@ -348,13 +348,29 @@ read_positive_value() {
     done
 }
 
+# 函数：读取必填正数输入
+read_required_positive_value() {
+    local prompt="$1"
+    local value=""
+
+    while true; do
+        echo -n -e "$prompt" >&2
+        read -r value
+        if is_positive_number "$value"; then
+            echo "$value"
+            return 0
+        fi
+        echo -e "\033[31m请输入有效的正数，不能留空。\033[0m" >&2
+    done
+}
+
 # 函数：选择地区/RTT 模式
 select_tuning_rtt() {
     local choice=""
     local buffer_choice=""
 
     while true; do
-        echo -e "\033[36m请选择 buffer 档位模式，并手动输入真实业务方向 RTT：\033[0m"
+        echo -e "\033[36m请选择 buffer 档位模式，并填写真实链接延迟：\033[0m"
         echo -e "\033[33m 1. 亚太档位（通常 RTT < 100ms）\033[0m"
         echo -e "\033[33m 2. 美欧档位（通常 RTT 150-300ms）\033[0m"
         echo -e "\033[33m 3. 手动 RTT + 手动档位\033[0m"
@@ -365,17 +381,17 @@ select_tuning_rtt() {
             1)
                 SMART_REGION="亚太"
                 SMART_REGION_CODE="asia"
-                SMART_RTT_MS=$(read_positive_value "\033[36m请输入真实业务方向 RTT(ms，默认 80；不要填 Speedtest 延迟): \033[0m" "80")
+                SMART_RTT_MS=$(read_required_positive_value "\033[36m请输入真实链接延迟(ms，v2rayN 测出来的即可): \033[0m")
                 return 0
                 ;;
             2)
                 SMART_REGION="美欧"
                 SMART_REGION_CODE="overseas"
-                SMART_RTT_MS=$(read_positive_value "\033[36m请输入真实业务方向 RTT(ms，默认 220；不要填 Speedtest 延迟): \033[0m" "220")
+                SMART_RTT_MS=$(read_required_positive_value "\033[36m请输入真实链接延迟(ms，v2rayN 测出来的即可): \033[0m")
                 return 0
                 ;;
             3)
-                SMART_RTT_MS=$(read_positive_value "\033[36m请输入真实业务方向 RTT(ms，默认 100；不要填 Speedtest 延迟): \033[0m" "100")
+                SMART_RTT_MS=$(read_required_positive_value "\033[36m请输入真实链接延迟(ms，v2rayN 测出来的即可): \033[0m")
                 while true; do
                     echo -e "\033[36m请选择 buffer 档位模式：\033[0m"
                     echo -e "\033[33m 1. 亚太档位\033[0m"
